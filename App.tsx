@@ -1,193 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import { Layout } from './components/Layout';
-import { Header } from './components/Header';
-import { HomeFeed } from './components/HomeFeed';
-import { ExploreView } from './components/ExploreView';
-import { StatusView } from './components/StatusView';
-import { MarketplaceView } from './components/MarketplaceView';
-import { CategoryView } from './components/CategoryView';
-import { StoreDetailView } from './components/StoreDetailView';
-import { CashbackView } from './components/CashbackView';
-import { AuthModal } from './components/AuthModal';
-import { QuickRegister } from './components/QuickRegister';
-import { MapPin, Crown } from 'lucide-react';
-import { auth } from './lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { Category, Store } from './types';
+import React, { useState } from "react";
+import { Category, Store } from "./types";
+import { ExploreView } from "./components/ExploreView";
+import { CategoryView } from "./components/CategoryView";
+
+type View = "home" | "category" | "store" | "cashback";
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  
-  // Logic to show registration screen (simulated for now)
-  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
-  
-  // State for handling selected category/store view
+  const [currentView, setCurrentView] = useState<View>("home");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
-  // Firebase Auth Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      
-      // SIMULATION: If user logs in, we could check Supabase here.
-      // For demo purposes, we are not forcing the screen unless you uncomment this:
-      // if (currentUser) setNeedsProfileSetup(true); 
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Simulate Splash Screen logic with 5 seconds duration
-  useEffect(() => {
-    const timer = setTimeout(() => {
-        setIsLoading(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Handle Category Selection
+  // 👉 Home → Categoria
   const handleSelectCategory = (category: Category) => {
-      setSelectedCategory(category);
-      setActiveTab('category_detail');
+    setSelectedCategory(category);
+    setSelectedStore(null);
+    setCurrentView("category");
   };
 
-  // Handle Store Selection
-  const handleSelectStore = (store: Store) => {
-      setSelectedStore(store);
-      setActiveTab('store_detail');
+  // 👉 Clique em loja (tanto da Home quanto da Categoria)
+  const handleStoreClick = (store: Store) => {
+    setSelectedStore(store);
+    setCurrentView("store");
   };
 
-  const handleProfileComplete = () => {
-      setNeedsProfileSetup(false);
-      setActiveTab('home');
+  // 👉 Voltar pra Home
+  const handleBackToHome = () => {
+    setCurrentView("home");
+    setSelectedCategory(null);
+    setSelectedStore(null);
   };
 
-  if (isLoading) {
-      return (
-          <div className="fixed inset-0 bg-gradient-to-br from-primary-500 to-orange-700 flex flex-col items-center justify-center text-white z-50">
-              
-              {/* Animated Logo Container */}
-              <div className="relative flex flex-col items-center justify-center mb-8">
-                  {/* Icon Pops In */}
-                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl mb-4 animate-pop-in opacity-0">
-                      <MapPin className="w-10 h-10 text-primary-600 fill-primary-600" />
-                  </div>
+  // 👉 Voltar da loja para a categoria
+  const handleBackToCategory = () => {
+    if (selectedCategory) {
+      setCurrentView("category");
+      setSelectedStore(null);
+    } else {
+      // fallback: se por algum motivo não tiver categoria, volta pra home
+      handleBackToHome();
+    }
+  };
 
-                  {/* Title Slides Up (delayed) */}
-                  <div className="text-5xl font-bold font-display animate-slide-up opacity-0 [animation-delay:500ms]">
-                    Localizei
-                  </div>
-
-                  {/* Subtitle Expands (delayed further) */}
-                  <div className="text-sm font-light uppercase mt-2 animate-tracking-expand opacity-0 [animation-delay:1000ms]">
-                    Freguesia
-                  </div>
-              </div>
-              
-              {/* Sponsor Footer Slides Up at the end */}
-              <div className="absolute bottom-12 text-center animate-spin-in opacity-0 [animation-delay:1500ms]">
-                  <p className="text-[10px] opacity-70 uppercase tracking-widest mb-1">Patrocinador Master</p>
-                  <div className="bg-white/10 backdrop-blur-sm px-6 py-2 rounded-full border border-white/20 flex items-center gap-2 shadow-lg">
-                    <Crown className="w-4 h-4 text-yellow-300 fill-yellow-300 drop-shadow-md" />
-                    <p className="font-bold text-lg tracking-wide text-white drop-shadow-sm">Grupo Esquematiza</p>
-                  </div>
-              </div>
-          </div>
-      )
-  }
-
-  // View: Quick Register (Forces user to complete profile if needed)
-  if (user && needsProfileSetup) {
-      return (
-          <QuickRegister user={user} onComplete={handleProfileComplete} />
-      );
-  }
+  // 👉 Abrir visão de Cashback
+  const handleOpenCashback = () => {
+    setCurrentView("cashback");
+  };
 
   return (
-    <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex justify-center transition-colors duration-300 relative">
-        
-        <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-          {/* Only show Header if NOT in specific detail views that have their own headers */}
-          {!['category_detail', 'store_detail', 'cashback'].includes(activeTab) && (
-              <Header 
-                isDarkMode={isDarkMode} 
-                toggleTheme={toggleTheme}
-                onAuthClick={() => setIsAuthOpen(true)}
-                user={user}
-              />
-          )}
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {currentView === "home" && (
+        <ExploreView
+          onSelectCategory={handleSelectCategory}
+          onStoreClick={handleStoreClick}
+          onOpenCashback={handleOpenCashback}
+        />
+      )}
 
-          <main className="animate-in fade-in duration-500">
-            {activeTab === 'home' && (
-                <HomeFeed 
-                    onNavigate={setActiveTab} 
-                    onSelectCategory={handleSelectCategory}
-                    onStoreClick={handleSelectStore} 
-                />
-            )}
-            
-            {activeTab === 'explore' && (
-                <ExploreView 
-                    onSelectCategory={handleSelectCategory}
-                    onNavigate={setActiveTab}
-                    onStoreClick={handleSelectStore}
-                />
-            )}
+      {currentView === "category" && selectedCategory && (
+        <CategoryView
+          category={selectedCategory}
+          onBack={handleBackToHome}
+          onStoreClick={handleStoreClick}
+        />
+      )}
 
-            {activeTab === 'status' && <StatusView />}
-            {activeTab === 'marketplace' && <MarketplaceView onBack={() => setActiveTab('home')} />}
-            
-            {/* New Category Detail View */}
-            {activeTab === 'category_detail' && selectedCategory && (
-                <CategoryView 
-                    category={selectedCategory} 
-                    onBack={() => setActiveTab('home')}
-                    onStoreClick={handleSelectStore}
-                />
-            )}
+      {currentView === "store" && selectedStore && (
+        <div className="max-w-3xl mx-auto p-4">
+          <button
+            onClick={handleBackToCategory}
+            className="mb-4 text-sm font-medium text-blue-600 hover:underline"
+          >
+            ← Voltar
+          </button>
 
-            {/* New Store Detail View */}
-            {activeTab === 'store_detail' && selectedStore && (
-                <StoreDetailView 
-                    store={selectedStore} 
-                    onBack={() => setActiveTab('home')}
-                    onOpenCashback={() => setActiveTab('cashback')}
-                />
+          <div className="bg-white shadow-md rounded-2xl p-4 space-y-2">
+            <h1 className="text-xl font-semibold">{selectedStore.name}</h1>
+            {selectedStore.description && (
+              <p className="text-sm text-slate-600">
+                {selectedStore.description}
+              </p>
             )}
+            {selectedStore.address && (
+              <p className="text-sm text-slate-700">
+                📍 {selectedStore.address}
+              </p>
+            )}
+            {selectedStore.phone && (
+              <p className="text-sm text-slate-700">
+                📞 {selectedStore.phone}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
-            {/* New Cashback View */}
-            {activeTab === 'cashback' && (
-                <CashbackView onBack={() => setActiveTab('home')} />
-            )}
+      {currentView === "cashback" && (
+        <div className="max-w-3xl mx-auto p-4">
+          <button
+            onClick={handleBackToHome}
+            className="mb-4 text-sm font-medium text-blue-600 hover:underline"
+          >
+            ← Voltar
+          </button>
 
-            {activeTab === 'menu' && (
-                <div className="p-10 flex flex-col items-center justify-center text-center h-[60vh] text-gray-400 dark:text-gray-500">
-                    <div className="mb-4 text-6xl">🚧</div>
-                    <h2 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">Em Construção</h2>
-                    <p className="text-sm">Acesse "Explorar" para ver a nova Área ou "Início" para as lojas.</p>
-                    <button 
-                        onClick={() => setActiveTab('home')}
-                        className="mt-6 px-6 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full font-medium text-sm"
-                    >
-                        Voltar ao Início
-                    </button>
-                </div>
-            )}
-          </main>
-          <AuthModal 
-            isOpen={isAuthOpen} 
-            onClose={() => setIsAuthOpen(false)} 
-            user={user}
-          />
-        </Layout>
-      </div>
+          <div className="bg-white shadow-md rounded-2xl p-4 space-y-3">
+            <h1 className="text-xl font-semibold">
+              Cashback Localizei Freguesia
+            </h1>
+            <p className="text-sm text-slate-700">
+              Aqui vai entrar a tela oficial de Cashback assim que finalizarmos
+              a lógica completa no Supabase e no front.
+            </p>
+            <p className="text-xs text-slate-500">
+              Por enquanto, essa tela é só um placeholder para permitir que o
+              app build e que você consiga testar o fluxo de navegação.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
