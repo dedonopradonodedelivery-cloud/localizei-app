@@ -1,15 +1,19 @@
+
 import React, { useState } from 'react';
 import { CATEGORIES, STORES } from '../constants';
-import { AdType } from '../types';
+import { AdType, Category, Store } from '../types';
 import { BadgeCheck, TrendingUp, Star, Search, X, Eye, EyeOff, ChevronRight, Coins, ShoppingBag, Sparkles } from 'lucide-react';
 
 interface HomeFeedProps {
   onNavigate: (view: string) => void;
+  onSelectCategory: (category: Category) => void;
+  onStoreClick?: (store: Store) => void;
 }
 
-export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
+export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate, onSelectCategory, onStoreClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showBalance, setShowBalance] = useState(true);
+  const [displayCount, setDisplayCount] = useState(10); // Infinite scroll limit
   
   // Helper to remove accents and lowercase text for better matching
   const normalizeText = (text: string) => {
@@ -19,7 +23,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
       .toLowerCase();
   };
 
-  // Filter stores based on search term (Name, Category, or Description)
+  // Filter stores based on search term
   const filteredStores = STORES.filter((store) => {
     const term = normalizeText(searchTerm);
     const name = normalizeText(store.name);
@@ -38,6 +42,45 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
     const priority = { [AdType.PREMIUM]: 3, [AdType.LOCAL]: 2, [AdType.ORGANIC]: 1 };
     return priority[b.adType] - priority[a.adType];
   });
+
+  // Infinite Scroll Logic (Simulated)
+  const visibleStores = React.useMemo(() => {
+     // If searching, show everything. If not, slice based on infinite scroll
+     if (searchTerm) return sortedStores;
+     
+     // Mock infinite scroll by repeating items if we run out of real ones
+     const items = [];
+     for (let i = 0; i < displayCount; i++) {
+        items.push(sortedStores[i % sortedStores.length]);
+     }
+     return items;
+  }, [sortedStores, displayCount, searchTerm]);
+
+  // Intersection Observer for loading more
+  const loadMoreRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (searchTerm) return; // Disable infinite scroll during search
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // Load more items
+          setTimeout(() => {
+             setDisplayCount((prev) => prev + 5);
+          }, 500);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [searchTerm]);
+
 
   // Filter for "Achadinhos" (Marketplace enabled stores)
   const marketplaceStores = STORES.filter(s => s.isMarketplace);
@@ -69,21 +112,21 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Categories (Always visible, even when searching, unless you want to hide them) */}
+      {/* Categories (Always visible, unless hidden on search preference) */}
       {!searchTerm && (
         <div className="w-full pl-5">
             {/* Horizontal Scrolling Grid - 2 Rows */}
-            <div className="grid grid-rows-2 grid-flow-col gap-x-4 gap-y-4 overflow-x-auto pb-4 pr-5 no-scrollbar w-full touch-pan-x overscroll-x-contain">
+            <div className="grid grid-rows-2 grid-flow-col auto-cols-max gap-x-4 gap-y-6 overflow-x-auto pb-2 pr-5 no-scrollbar w-full touch-pan-x">
             {CATEGORIES.map((cat) => (
                 <div 
                   key={cat.id} 
-                  className="flex flex-col items-center gap-2 cursor-pointer group min-w-[70px]"
-                  onClick={() => setSearchTerm(cat.name)} // Quick filter by clicking category
+                  className="w-[72px] flex flex-col items-center gap-2 cursor-pointer group"
+                  onClick={() => onSelectCategory(cat)}
                 >
                 <div className="w-[70px] h-[70px] bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:shadow-md group-hover:border-primary-200 transition-all flex-shrink-0">
                     {cat.icon}
                 </div>
-                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 text-center leading-tight line-clamp-2 w-[70px]">{cat.name}</span>
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 text-center leading-tight line-clamp-2 w-full">{cat.name}</span>
                 </div>
             ))}
             </div>
@@ -95,19 +138,12 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Banner Destaque */}
             <div className="px-5">
-                <div className="w-full h-48 rounded-3xl overflow-hidden relative shadow-lg group cursor-pointer">
+                <div className="w-full h-48 rounded-3xl overflow-hidden relative shadow-lg group cursor-pointer" onClick={() => onStoreClick && onStoreClick(STORES[0])}>
                     <img 
-                        src="https://picsum.photos/600/300?random=99" 
+                        src="https://nyneuuvcdmtqjyaqrztz.supabase.co/storage/v1/object/public/Banners%20Home/Rio%20Phone%20Store%20-%20Novo%20Design.png" 
                         alt="Featured Store" 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
-                        <div className="bg-primary-500 w-fit px-3 py-1 rounded-full text-[10px] text-white font-bold mb-2 uppercase tracking-wider shadow-sm">
-                            Destaque da Semana
-                        </div>
-                        <h2 className="text-white text-2xl font-bold font-display mb-1">Casas Pedro</h2>
-                        <p className="text-gray-200 text-sm line-clamp-1">O maior empório de grãos da Freguesia.</p>
-                    </div>
                     {/* Carousel Dots */}
                     <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1">
                         <div className="w-6 h-1 bg-white rounded-full"></div>
@@ -117,9 +153,9 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
                 </div>
             </div>
 
-            {/* Cashback Mini Banner */}
+            {/* Cashback Mini Banner - Click to open Cashback View */}
             <div className="px-5">
-                <div className="bg-gray-900 rounded-2xl p-4 flex items-center justify-between shadow-lg border border-yellow-500/30 relative overflow-hidden">
+                <div onClick={() => onNavigate('cashback')} className="bg-gray-900 rounded-2xl p-4 flex items-center justify-between shadow-lg border border-yellow-500/30 relative overflow-hidden cursor-pointer active:scale-[0.98] transition-transform">
                     {/* Decorative Gold Glow */}
                     <div className="absolute -left-6 -top-10 w-32 h-32 bg-yellow-500/20 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -134,7 +170,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
                                     {showBalance ? 'R$ 54,90' : '••••••'}
                                 </span>
                                 <button 
-                                    onClick={() => setShowBalance(!showBalance)} 
+                                    onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }} 
                                     className="text-gray-500 hover:text-white transition-colors"
                                 >
                                     {showBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -158,7 +194,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
                 </div>
                 <div className="flex gap-4 overflow-x-auto pb-4 pr-5 no-scrollbar">
                     {marketplaceStores.map((store) => (
-                        <div key={store.id} className="min-w-[140px] w-[140px] flex flex-col gap-2 group cursor-pointer">
+                        <div key={store.id} onClick={() => onStoreClick && onStoreClick(store)} className="min-w-[140px] w-[140px] flex flex-col gap-2 group cursor-pointer">
                             <div className="w-full h-40 rounded-2xl overflow-hidden relative shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md transition-all">
                                 <img src={store.image} alt={store.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 {/* Tag Badge */}
@@ -191,7 +227,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Business List / Feed */}
+      {/* Business List / Feed with Infinite Scroll */}
       <div className="px-5 pb-4 min-h-[300px]">
         <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg text-gray-800 dark:text-white">
@@ -200,10 +236,15 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
             {!searchTerm && <span className="text-xs text-primary-600 dark:text-primary-400 font-semibold cursor-pointer">Ver todos</span>}
         </div>
         
-        {sortedStores.length > 0 ? (
+        {visibleStores.length > 0 ? (
           <div className="flex flex-col gap-4">
-            {sortedStores.map((store) => (
-              <div key={store.id} className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 hover:shadow-md transition-all cursor-pointer relative overflow-hidden">
+            {visibleStores.map((store, index) => (
+              // Added index to key because we are duplicating items for infinite scroll simulation
+              <div 
+                key={`${store.id}-${index}`} 
+                onClick={() => onStoreClick && onStoreClick(store)}
+                className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+              >
                 {/* Premium Visual Indicator */}
                 {store.adType === AdType.PREMIUM && (
                     <div className="absolute top-0 right-0 bg-gradient-to-bl from-primary-500 to-orange-400 text-white text-[9px] font-bold px-3 py-1 rounded-bl-xl z-10">
@@ -243,6 +284,12 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ onNavigate }) => {
                 </div>
               </div>
             ))}
+            {/* Loader element for infinite scroll */}
+            {!searchTerm && (
+                <div ref={loadMoreRef} className="h-20 flex items-center justify-center w-full text-gray-400 text-xs animate-pulse">
+                    Carregando mais lojas...
+                </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-gray-500 dark:text-gray-400">

@@ -27,12 +27,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
 
   return (
     <div className="fixed bottom-6 left-0 right-0 px-6 z-40 flex justify-center">
-      {/* Main Container - Reduced height to h-[64px] */}
-      <div className="w-full max-w-xs sm:max-w-sm bg-gradient-to-r from-orange-500 to-orange-600 h-[64px] rounded-[2.5rem] shadow-2xl shadow-orange-500/30 relative flex items-center px-2 isolate overflow-hidden border border-white/10">
+      {/* Main Container - Decreased height to h-[60px] for compact look */}
+      <div className="w-full max-w-xs sm:max-w-sm bg-gradient-to-r from-orange-500 to-orange-600 h-[60px] rounded-[2rem] shadow-2xl shadow-orange-500/30 relative flex items-center px-2 isolate overflow-hidden border border-white/10">
         
         {/* The "Water Bubble" Sliding Background */}
         <div 
-          className={`absolute h-[80%] w-[calc(25%-12px)] rounded-[2rem] transition-all duration-500 cubic-bezier(0.25, 1.5, 0.5, 1) ${isAnimating ? 'animate-jelly' : ''}`}
+          className={`absolute h-[80%] w-[calc(25%-12px)] rounded-[1.5rem] transition-all duration-500 cubic-bezier(0.25, 1.5, 0.5, 1) ${isAnimating ? 'animate-jelly' : ''}`}
           style={{ 
             left: `calc(${activeIndex * 25}% + 6px)`, 
             background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.01) 100%)',
@@ -41,8 +41,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
           }}
         >
            {/* Specular Highlights for Liquid Effect */}
-           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-2 bg-white/70 rounded-full blur-[2px]"></div>
-           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-white/20 rounded-full blur-[1px]"></div>
+           <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-white/70 rounded-full blur-[1px]"></div>
+           <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-1 bg-white/20 rounded-full blur-[0.5px]"></div>
         </div>
 
         {/* Navigation Items */}
@@ -69,11 +69,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
               onClick={() => setActiveTab(tab.id)}
               className="flex-1 relative z-10 h-full flex flex-col items-center justify-center gap-0.5 transition-colors duration-300 group pb-0.5"
             >
-              <div className={`transition-all duration-300 ${isActive ? '-translate-y-0.5 scale-110' : 'translate-y-0'}`}>
+              <div className={`transition-all duration-300 ${isActive ? '-translate-y-0.5 scale-105' : 'translate-y-0'}`}>
                 {renderIcon()}
               </div>
               
-              <span className={`text-[9px] font-bold transition-all duration-300 absolute bottom-2 ${
+              <span className={`text-[10px] font-bold transition-all duration-300 absolute bottom-2 ${
                 isActive 
                   ? 'text-white opacity-100 drop-shadow-sm' 
                   : 'text-orange-100 opacity-90'

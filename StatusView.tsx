@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { STORIES } from '../constants';
-import { Plus, X, CircleDashed, ChevronLeft, ChevronRight } from 'lucide-react';
+import { STORIES, CHANNELS } from '../constants';
+import { Plus, X, CircleDashed, ChevronLeft, ChevronRight, Camera, Image as ImageIcon, Video, Type, PenTool, BadgeCheck, LayoutGrid } from 'lucide-react';
 
 export const StatusView: React.FC = () => {
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
+  const [isCreationMenuOpen, setIsCreationMenuOpen] = useState(false);
+  const [followedChannels, setFollowedChannels] = useState<string[]>([]);
 
   const activeStory = activeStoryIndex !== null ? STORIES[activeStoryIndex] : null;
 
@@ -49,14 +51,23 @@ export const StatusView: React.FC = () => {
     }
   };
 
+  const toggleFollow = (id: string) => {
+    setFollowedChannels(prev => 
+      prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
+    );
+  };
+
   return (
     <div className="relative min-h-full bg-white dark:bg-gray-900 animate-in fade-in duration-500">
       {/* Main List View */}
       <div className="p-5 pb-24">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white font-display mb-6">Status</h2>
 
-        {/* My Status Row */}
-        <div className="flex items-center gap-4 mb-8 cursor-pointer active:opacity-70 transition-opacity">
+        {/* My Status Row - Click triggers creation menu */}
+        <div 
+            onClick={() => setIsCreationMenuOpen(true)}
+            className="flex items-center gap-4 mb-8 cursor-pointer active:opacity-70 transition-opacity"
+        >
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden border-2 border-transparent">
               <img src="https://ui-avatars.com/api/?name=Eu&background=random" alt="Meu Status" className="w-full h-full object-cover" />
@@ -76,7 +87,7 @@ export const StatusView: React.FC = () => {
         </div>
 
         {/* Horizontal Scroll for Shopkeepers (Fileira de bolinhas) */}
-        <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar">
+        <div className="flex gap-4 overflow-x-auto pb-8 no-scrollbar border-b border-gray-100 dark:border-gray-800">
             {STORIES.map((story, index) => (
                 <div 
                     key={story.id} 
@@ -95,14 +106,64 @@ export const StatusView: React.FC = () => {
                 </div>
             ))}
         </div>
-        
-        {/* Informative Footer */}
-        <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-6 text-center opacity-60">
-            <p className="text-xs text-gray-400 flex items-center justify-center gap-2">
-                <CircleDashed className="w-3 h-3" />
-                Suas atualizações somem em 24h
-            </p>
+
+        {/* CHANNELS SECTION */}
+        <div className="mt-8">
+          <div className="flex justify-between items-end mb-4">
+             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Canais</h3>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            Receba atualizações sobre os assuntos do seu interesse. Encontre canais para seguir.
+          </p>
+
+          <div className="flex justify-between items-center mb-4">
+             <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">Encontrar canais para seguir</span>
+             <button className="text-gray-400 hover:text-gray-600">
+               <ChevronRight className="w-4 h-4 rotate-90" />
+             </button>
+          </div>
+
+          {/* Channel List */}
+          <div className="flex flex-col gap-6">
+             {CHANNELS.map(channel => (
+               <div key={channel.id} className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 dark:border-gray-700 flex-shrink-0">
+                     <img src={channel.image} alt={channel.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                     <div className="flex items-center gap-1">
+                        <h4 className="font-bold text-gray-900 dark:text-white truncate text-base">{channel.name}</h4>
+                        {channel.verified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-50 dark:fill-blue-900" />}
+                     </div>
+                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Seguidores: {channel.followers}</p>
+                  </div>
+                  <button 
+                    onClick={() => toggleFollow(channel.id)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                      followedChannels.includes(channel.id) 
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400' 
+                      : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200'
+                    }`}
+                  >
+                    {followedChannels.includes(channel.id) ? 'Seguindo' : 'Seguir'}
+                  </button>
+               </div>
+             ))}
+          </div>
+
+          {/* Bottom Actions */}
+          <div className="mt-8 flex flex-col gap-3">
+             <button className="w-full py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <LayoutGrid className="w-4 h-4" />
+                Mais
+             </button>
+             <button className="w-full py-3 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm">
+                <Plus className="w-4 h-4" />
+                Criar canal
+             </button>
+          </div>
         </div>
+        
       </div>
 
       {/* Full Screen Player Overlay */}
@@ -168,6 +229,56 @@ export const StatusView: React.FC = () => {
                 ❤️
               </button>
           </div>
+        </div>
+      )}
+
+      {/* Creation Menu (Bottom Sheet) */}
+      {isCreationMenuOpen && (
+        <div 
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end justify-center animate-in fade-in duration-300"
+            onClick={() => setIsCreationMenuOpen(false)}
+        >
+            <div 
+                className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-[2.5rem] p-6 pb-10 shadow-2xl animate-in slide-in-from-bottom duration-300"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-8"></div>
+                
+                <h3 className="text-center font-bold text-gray-800 dark:text-white text-xl mb-8">Criar novo status</h3>
+
+                <div className="grid grid-cols-3 gap-6 mb-8">
+                    {/* Text Option */}
+                    <button className="flex flex-col items-center gap-3 group">
+                        <div className="w-16 h-16 rounded-3xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
+                            <Type className="w-7 h-7 text-gray-600 dark:text-gray-300" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Texto</span>
+                    </button>
+
+                    {/* Photo Option */}
+                    <button className="flex flex-col items-center gap-3 group">
+                        <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-blue-100 dark:border-blue-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                            <Camera className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Foto</span>
+                    </button>
+
+                    {/* Video Option */}
+                    <button className="flex flex-col items-center gap-3 group">
+                        <div className="w-16 h-16 rounded-3xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center border border-red-100 dark:border-red-800 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors">
+                            <Video className="w-7 h-7 text-red-600 dark:text-red-400" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Vídeo</span>
+                    </button>
+                </div>
+
+                <button 
+                    onClick={() => setIsCreationMenuOpen(false)}
+                    className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                    Cancelar
+                </button>
+            </div>
         </div>
       )}
     </div>

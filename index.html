@@ -33,6 +33,7 @@
               'fade-in': 'fadeIn 1.2s ease-out forwards',
               'tracking-expand': 'trackingExpand 1.5s ease-out forwards',
               'jelly': 'jelly 0.6s ease-in-out',
+              'spin-in': 'spinIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards',
             },
             keyframes: {
               popIn: {
@@ -56,6 +57,10 @@
                 '25%': { transform: 'scale(1.15, 0.85)' },
                 '50%': { transform: 'scale(0.9, 1.1)' },
                 '75%': { transform: 'scale(1.05, 0.95)' },
+              },
+              spinIn: {
+                '0%': { opacity: '0', transform: 'rotate(0deg) scale(0)' },
+                '100%': { opacity: '1', transform: 'rotate(360deg) scale(1)' },
               }
             }
           }
@@ -81,7 +86,8 @@
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.84.0"
   }
 }
 </script>
