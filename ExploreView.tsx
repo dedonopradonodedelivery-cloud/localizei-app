@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, SlidersHorizontal, Clock, Percent, Star } from 'lucide-react';
-import { CATEGORIES, STORES } from '../constants';
-import { Category, Store } from '../types';
+import { CATEGORIES, STORES } from './constants';
+import { Category, Store } from './types';
 
 interface ExploreViewProps {
   onSelectCategory: (category: Category) => void;
