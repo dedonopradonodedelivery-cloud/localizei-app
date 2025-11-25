@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Search, Star, BadgeCheck, TrendingUp } from 'lucide-react';
-import { SUBCATEGORIES, STORES } from './constants';
-import { Category, Store } from './types';
+import { Category, Store } from '../types';
+import { SUBCATEGORIES, STORES } from '../constants';
 
 interface CategoryViewProps {
   category: Category;
@@ -9,111 +9,181 @@ interface CategoryViewProps {
   onStoreClick: (store: Store) => void;
 }
 
+const BANNERS = [
+  'https://picsum.photos/800/300?random=101',
+  'https://picsum.photos/800/300?random=102',
+  'https://picsum.photos/800/300?random=103',
+  'https://picsum.photos/800/300?random=104',
+  'https://picsum.photos/800/300?random=105',
+];
+
 export const CategoryView: React.FC<CategoryViewProps> = ({ category, onBack, onStoreClick }) => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [currentBanner, setCurrentBanner] = useState(0);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
-  const BANNERS = [
-    'https://picsum.photos/800/300?random=101',
-    'https://picsum.photos/800/300?random=102',
-    'https://picsum.photos/800/300?random=103',
-    'https://picsum.photos/800/300?random=104',
-    'https://picsum.photos/800/300?random=105',
-  ];
+  // Get subcategories or fallback to default
+  const subcategories = SUBCATEGORIES[category.name] || SUBCATEGORIES['default'];
 
-  // Troca automático dos banners
+  // Filter stores based on current category and selected subcategory
+  const filteredStores = STORES.filter((store) => {
+    // Normalization for robust matching (e.g. Alimentos vs Alimentação)
+    const storeCat = store.category.toLowerCase();
+    const currentCat = category.name.toLowerCase();
+    
+    // Match category (Handle specific mock data mismatch Alimentos vs Alimentação)
+    const matchesCategory = storeCat === currentCat || (currentCat === 'alimentação' && storeCat === 'alimentos');
+    
+    // Match subcategory (if exists in data)
+    const matchesSub =
+      !selectedSubcategory ||
+      !('subcategory' in store) ||
+      (store as any).subcategory === selectedSubcategory;
+
+    return matchesCategory && matchesSub;
+  });
+
+  // Carousel Auto-play
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % BANNERS.length);
-    }, 3500);
+    }, 4000); // 4 seconds
     return () => clearInterval(interval);
   }, []);
 
-  // Normalização para busca
-  const normalize = (text: string) =>
-    text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-  // Filtrar por categoria no array STORES
-  const filteredStores = STORES.filter(
-    (store) =>
-      normalize(store.category) === normalize(category.name) &&
-      (normalize(store.name).includes(normalize(searchTerm)) ||
-        normalize(store.description).includes(normalize(searchTerm)))
-  );
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 animate-in fade-in duration-300">
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 animate-in slide-in-from-right duration-300">
+      
       {/* Header */}
-      <div className="flex items-center gap-4 px-5 py-4 bg-white dark:bg-gray-900 border-b dark:border-gray-800 sticky top-0 z-20">
-        <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-          <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-white" />
+      <div className="sticky top-0 z-30 bg-gray-50 dark:bg-gray-900 px-5 py-4 flex items-center justify-between shadow-sm dark:shadow-none">
+        <button 
+          onClick={onBack}
+          className="p-2 -ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6 text-gray-800 dark:text-white" />
         </button>
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white">{category.name}</h2>
+        
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white font-display">
+          {category.name}
+        </h2>
+
+        <button className="p-2 -mr-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+          <Search className="w-6 h-6 text-gray-800 dark:text-white" />
+        </button>
       </div>
 
-      {/* Banner rotativo */}
-      <div className="w-full h-40 bg-gray-200 dark:bg-gray-800 rounded-b-3xl overflow-hidden shadow">
-        <img
-          key={currentBanner}
-          src={BANNERS[currentBanner]}
-          alt="Banner"
-          className="w-full h-full object-cover animate-fade"
-        />
-      </div>
-
-      {/* Campo de busca */}
-      <div className="px-5 mt-4">
-        <div className="relative group mb-2">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+      {/* Content Scrollable Area */}
+      <div className="p-5 space-y-6">
+        
+        {/* Carousel (5 Banners, 4s auto) */}
+        <div className="w-full aspect-[2/1] rounded-3xl overflow-hidden relative shadow-md">
+          {BANNERS.map((img, index) => (
+            <div 
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${index === currentBanner ? 'opacity-100' : 'opacity-0'}`}
+            >
+              <img src={img} alt="Banner" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+            </div>
+          ))}
+          {/* Dots Indicator */}
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+            {BANNERS.map((_, idx) => (
+              <div 
+                key={idx} 
+                className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentBanner ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`}
+              />
+            ))}
           </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar nesta categoria..."
-            className="block w-full pl-10 pr-10 py-3.5 border-none rounded-2xl leading-5 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
-          />
         </div>
-      </div>
 
-      {/* Lista de lojas */}
-      <div className="px-5 mt-6 space-y-4">
-        {filteredStores.length === 0 && (
-          <p className="text-gray-500 text-sm text-center">
-            Nenhuma loja encontrada nessa categoria.
-          </p>
-        )}
-
-        {filteredStores.map((store) => (
-          <div
-            key={store.id}
-            onClick={() => onStoreClick(store)}
-            className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm p-4 flex gap-4 cursor-pointer hover:shadow-md active:scale-95 transition-all"
-          >
-            <div className="w-24 h-24 rounded-xl overflow-hidden">
-              <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+        {/* Subcategories Grid */}
+        <div>
+            <h3 className="font-bold text-gray-800 dark:text-white mb-3 text-lg">Subcategorias</h3>
+            <div className="grid grid-cols-2 gap-4">
+            {subcategories.map((sub, idx) => {
+                const isSelected = selectedSubcategory === sub.name;
+                return (
+                    <div 
+                    key={idx}
+                    onClick={() => setSelectedSubcategory(isSelected ? null : sub.name)}
+                    className={`rounded-[2rem] p-6 flex flex-col items-center justify-center gap-4 shadow-sm transition-all cursor-pointer active:scale-95 border ${
+                        isSelected 
+                        ? 'bg-primary-500 border-primary-500' 
+                        : 'bg-white dark:bg-gray-800 border-transparent dark:border-gray-700 hover:shadow-md'
+                    }`}
+                    >
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors ${
+                        isSelected ? 'bg-white/20 text-white' : 'bg-orange-50 dark:bg-gray-700 text-primary-500'
+                    }`}>
+                        <div className={isSelected ? 'text-white' : 'text-primary-500'}>
+                            {sub.icon}
+                        </div>
+                    </div>
+                    <span className={`font-medium text-base text-center ${
+                        isSelected ? 'text-white' : 'text-gray-800 dark:text-white'
+                    }`}>
+                        {sub.name}
+                    </span>
+                    </div>
+                );
+            })}
             </div>
+        </div>
 
-            <div className="flex flex-col justify-between flex-1">
-              <h3 className="font-bold text-gray-800 dark:text-white">{store.name}</h3>
+        {/* Store List Section */}
+        <div className="pt-2">
+            <h3 className="font-bold text-gray-800 dark:text-white mb-4 text-lg">
+                {selectedSubcategory ? `Lojas de ${selectedSubcategory}` : `Lojas em ${category.name}`}
+            </h3>
+            
+            <div className="flex flex-col gap-4">
+                {filteredStores.length > 0 ? (
+                    filteredStores.map((store) => (
+                        <div 
+                            key={store.id} 
+                            onClick={() => onStoreClick(store)}
+                            className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 hover:shadow-md transition-all cursor-pointer relative overflow-hidden active:scale-[0.99]"
+                        >
+                            <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700">
+                                <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                            </div>
 
-              <div className="flex items-center gap-2 text-[12px] text-gray-500 dark:text-gray-400">
-                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                <span>{store.rating}</span>
-              </div>
+                            <div className="flex-1 flex flex-col justify-center">
+                                <div className="flex items-center gap-1 mb-1">
+                                    <h4 className="font-bold text-gray-800 dark:text-white line-clamp-1">{store.name}</h4>
+                                    {store.verified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-50 dark:fill-blue-900" />}
+                                </div>
+                                
+                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                    <span className="flex items-center gap-1 text-yellow-500 font-bold">
+                                        <Star className="w-3 h-3 fill-current" /> {store.rating}
+                                    </span>
+                                    <span>•</span>
+                                    <span>{store.category}</span>
+                                    <span>•</span>
+                                    <span>{store.distance}</span>
+                                </div>
 
-              {store.cashback && (
-                <span className="text-green-600 dark:text-green-400 font-bold text-xs mt-1">
-                  {store.cashback}% de cashback
-                </span>
-              )}
+                                {store.cashback ? (
+                                    <div className="flex items-center gap-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 w-fit px-2 py-1 rounded-md">
+                                        <TrendingUp className="w-3 h-3" />
+                                        <span className="text-[10px] font-bold">{store.cashback}% Cashback</span>
+                                    </div>
+                                ) : (
+                                    <p className="text-[11px] text-gray-400 line-clamp-1">{store.description}</p>
+                                )}
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center py-10 text-gray-400 text-sm">
+                        Nenhuma loja encontrada nesta categoria.
+                    </div>
+                )}
             </div>
-          </div>
-        ))}
-      </div>
+        </div>
 
+      </div>
     </div>
   );
 };
